@@ -40,8 +40,8 @@ $scenarios = [
     }],
     '9' => ['label' => 'Exception (tp($throwable))', 'run' => function () {
         try {
-            throw new \RuntimeException('Something went wrong while processing the request');
-        } catch (\Throwable $e) {
+            throw new RuntimeException('Something went wrong while processing the request');
+        } catch (Throwable $e) {
             tp($e);
         }
     }],
@@ -76,7 +76,7 @@ while (true) {
     try {
         $scenarios[$choice]['run']();
         echo "Sent.\n";
-    } catch (\Throwable $e) {
+    } catch (Throwable $e) {
         echo 'Error: '.$e->getMessage()."\n";
         echo "Is `php bin/tapper` running?\n";
     }

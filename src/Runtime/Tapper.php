@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tapper\Runtime;
 
+use Composer\Autoload\ClassLoader;
 use Tapper\Rpc\JsonRpcClient;
 use Tapper\Rpc\JsonRpcRequest;
 
@@ -104,7 +105,7 @@ class Tapper
 
     private function findProjectRoot(): ?string
     {
-        $composerClassLoader = \Composer\Autoload\ClassLoader::class;
+        $composerClassLoader = ClassLoader::class;
 
         if (! class_exists($composerClassLoader)) {
             return null;

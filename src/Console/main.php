@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use DI\ContainerBuilder;
 use PhpTui\Term\Terminal;
 use PhpTui\Tui\Bridge\PhpTerm\PhpTermBackend;
 use PhpTui\Tui\Display\Display;
@@ -10,7 +11,7 @@ use React\EventLoop\Loop;
 use React\EventLoop\LoopInterface;
 use Tapper\Console\Application;
 
-$builder = new \DI\ContainerBuilder;
+$builder = new ContainerBuilder;
 $builder->useAutowiring(true);
 $builder->useAttributes(true);
 $builder->addDefinitions([
