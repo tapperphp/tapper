@@ -13,3 +13,4 @@ Thumbs.db
 *.swo
 
 /vendor/
+/tapper.sock
