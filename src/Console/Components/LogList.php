@@ -11,7 +11,6 @@ use PhpTui\Tui\Display\Area;
 use PhpTui\Tui\Extension\Core\Widget\CompositeWidget;
 use PhpTui\Tui\Extension\Core\Widget\GridWidget;
 use PhpTui\Tui\Extension\Core\Widget\Scrollbar\ScrollbarOrientation;
-use PhpTui\Tui\Extension\Core\Widget\Scrollbar\ScrollbarState;
 use PhpTui\Tui\Extension\Core\Widget\Scrollbar\ScrollbarSymbols;
 use PhpTui\Tui\Extension\Core\Widget\ScrollbarWidget;
 use PhpTui\Tui\Layout\Constraint;
@@ -162,7 +161,7 @@ class LogList extends Component
                     ),
                 ),
             ScrollbarWidget::default()
-                ->state(new ScrollbarState(max(0, $this->count - $this->visible), $this->appState->offset, 1))
+                ->state(Scroll::scrollbarState($this->count, $this->visible, $this->appState->offset))
                 ->orientation(ScrollbarOrientation::VerticalRight)
                 ->symbols(new ScrollbarSymbols('│', '█', '', ''))
                 ->endSymbol(null)

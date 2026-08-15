@@ -14,7 +14,6 @@ use PhpTui\Tui\Extension\Core\Widget\CompositeWidget;
 use PhpTui\Tui\Extension\Core\Widget\List\ListItem;
 use PhpTui\Tui\Extension\Core\Widget\ListWidget;
 use PhpTui\Tui\Extension\Core\Widget\Scrollbar\ScrollbarOrientation;
-use PhpTui\Tui\Extension\Core\Widget\Scrollbar\ScrollbarState;
 use PhpTui\Tui\Extension\Core\Widget\Scrollbar\ScrollbarSymbols;
 use PhpTui\Tui\Extension\Core\Widget\ScrollbarWidget;
 use PhpTui\Tui\Style\Style;
@@ -25,6 +24,7 @@ use Tapper\Console\CommandAttributes\KeyPressed;
 use Tapper\Console\CommandAttributes\Mouse;
 use Tapper\Console\Component;
 use Tapper\Console\MessageFormatter;
+use Tapper\Console\Support\Scroll;
 
 class Details extends Component
 {
@@ -153,7 +153,7 @@ class Details extends Component
                 ->items(...$allItems)
                 ->offset($this->appState->detailsOffset),
             ScrollbarWidget::default()
-                ->state(new ScrollbarState(max(0, $this->count - $this->area->height), $this->appState->detailsOffset, 1))
+                ->state(Scroll::scrollbarState($this->count, $this->area->height, $this->appState->detailsOffset))
                 ->orientation(ScrollbarOrientation::VerticalRight)
                 ->symbols(new ScrollbarSymbols('│', '█', '', ''))
                 ->endSymbol(null)
