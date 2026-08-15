@@ -9,6 +9,7 @@ final readonly class JsonRpcRequest implements JsonRpc
     public function __construct(
         private string $method,
         private array $params,
+        private ?string $id = null,
     ) {}
 
     public function payload(): array
@@ -17,7 +18,7 @@ final readonly class JsonRpcRequest implements JsonRpc
             'jsonrpc' => '2.0',
             'method' => $this->method,
             'params' => $this->params,
-            'id' => $id ?? uniqid('rpc_', true),
+            'id' => $this->id ?? uniqid('rpc_', true),
         ];
     }
 }

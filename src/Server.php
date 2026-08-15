@@ -14,7 +14,12 @@ use Tapper\Console\State\LogItem;
 
 class Server
 {
-    private static $id = 0;
+    private int $id = 0;
+
+    /** @var list<callable> FIFO queue of pending wait() resolvers, one per outstanding tp()->wait() call */
+    private array $waitResolvers = [];
+
+    private bool $waitListenerRegistered = false;
 
     public function __construct(
         private readonly AppState $appState,
@@ -54,7 +59,7 @@ class Server
                     case 'log':
                         $kind = $params['kind'] ?? 'log';
                         $isAppended = $this->appState->appendLog(new LogItem(
-                            self::$id,
+                            $this->id,
                             $params['microtime'],
                             $kind === 'error' ? $params['message'] : json_encode($params['message'], JSON_UNESCAPED_UNICODE),
                             $params['caller'],
@@ -71,13 +76,13 @@ class Server
                         ]);
 
                         if ($isAppended) {
-                            self::$id++;
+                            $this->id++;
                         }
                         break;
 
                     case 'wait':
                         $isAppended = $this->appState->appendLog(new LogItem(
-                            self::$id,
+                            $this->id,
                             $params['microtime'],
                             "⏸ {$params['message']} — press ENTER to continue",
                             $params['caller'],
@@ -88,12 +93,12 @@ class Server
                         ));
 
                         if ($isAppended) {
-                            self::$id++;
+                            $this->id++;
                         }
 
                         $this->appState->pendingWaits++;
 
-                        $this->eventBus->listen(KeyCode::Enter, function () use ($encoder, $id) {
+                        $this->waitResolvers[] = function () use ($encoder, $id) {
                             $encoder->write([
                                 'jsonrpc' => '2.0',
                                 'result' => 'continue',
@@ -101,7 +106,9 @@ class Server
                             ]);
 
                             $this->appState->pendingWaits = max(0, $this->appState->pendingWaits - 1);
-                        });
+                        };
+
+                        $this->registerWaitListener();
 
                         break;
 
@@ -116,6 +123,28 @@ class Server
                         ]);
                 }
             });
+        });
+    }
+
+    /**
+     * Registers a single, permanent Enter listener the first time it's needed, instead of
+     * one per wait() call. Each keypress resolves the oldest pending wait in FIFO order, so
+     * overlapping wait() calls no longer all resolve on the same keypress.
+     */
+    private function registerWaitListener(): void
+    {
+        if ($this->waitListenerRegistered) {
+            return;
+        }
+
+        $this->waitListenerRegistered = true;
+
+        $this->eventBus->listen(KeyCode::Enter, function () {
+            $resolver = array_shift($this->waitResolvers);
+
+            if ($resolver) {
+                $resolver();
+            }
         });
     }
 }

@@ -52,6 +52,8 @@ class Application
 
     public function run(): int
     {
+        ErrorHandler::install($this->appState);
+
         $this->area = $this->phpTermBackend->size();
         $this->appState->version = 'v0.1.1';
         $this->terminal->execute(Actions::alternateScreenEnable());
@@ -64,14 +66,15 @@ class Application
         $this->startRendering();
         $this->startInputHandling();
         $this->server->run();
-        $this->loop->run();
 
         $this->loop->addSignal(SIGINT, function () {
-            echo 'kill';
+            $this->close();
         });
         $this->loop->addSignal(SIGTERM, function () {
-            echo 'kill';
+            $this->close();
         });
+
+        $this->loop->run();
 
         return 0;
     }
@@ -127,7 +130,9 @@ class Application
                 $this->handleEventInTypingMode($event, $data);
             }
 
-            if ($data === 'q') {
+            // `stty raw` (enabled by Terminal::enableRawMode()) disables ISIG, so Ctrl+C
+            // never reaches us as SIGINT — it arrives as byte 0x03 (ETX) on stdin instead.
+            if ($data === 'q' || $data === "\x03") {
                 $this->close();
             }
         });

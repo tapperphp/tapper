@@ -21,6 +21,8 @@ use RuntimeException;
  * @property int $detailsOffset
  * @property int $pendingWaits
  * @property bool $popupOpen
+ * @property ?string $errorNotice
+ * @property float $errorNoticeExpiresAt
  */
 class AppState
 {
@@ -50,6 +52,8 @@ class AppState
         private int $detailsOffset = 0,
         private int $pendingWaits = 0,
         private bool $popupOpen = false,
+        private ?string $errorNotice = null,
+        private float $errorNoticeExpiresAt = 0.0,
     ) {}
 
     /**
@@ -83,13 +87,11 @@ class AppState
             $this->logs[] = $logItem;
         }
 
-        if (! $this->batching) {
+        if ($this->batching) {
+            $this->changed['logs'] = true;
+        } else {
             $this->notifyChange();
             $this->callObservers('logs');
-        }
-
-        if ($this->batching) {
-            $this->changed[] = 'logs';
         }
 
         return ! $isRepeat;
@@ -121,7 +123,7 @@ class AppState
     {
         $this->batching = false;
 
-        foreach ($this->changed as $field) {
+        foreach (array_keys($this->changed) as $field) {
             $this->callObservers($field);
         }
 
@@ -130,21 +132,16 @@ class AppState
         $this->notifyChange();
     }
 
-    /*
-     * @TODO investigate why `changed` overflows
-     * when setting something multiple times,
-     * like pressing enter many times
-     * when waiting is set on tp
-     */
     public function __set($name, $value)
     {
         $this->$name = $value;
 
         if ($this->batching) {
-            $this->changed[] = $name;
-        }
-
-        if (! $this->batching) {
+            // Keyed by field name (a set, not a list) so repeatedly setting the same
+            // field while batched — e.g. pressing Enter many times while a tp()->wait()
+            // is pending — doesn't grow $changed unbounded or replay observers per write.
+            $this->changed[$name] = true;
+        } else {
             $this->notifyChange();
             $this->callObservers($name);
         }
