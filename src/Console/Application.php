@@ -18,6 +18,7 @@ use PhpTui\Tui\Display\Display;
 use PhpTui\Tui\Extension\Core\Widget\CompositeWidget;
 use React\EventLoop\LoopInterface;
 use React\Stream\ReadableResourceStream;
+use Tapper\Console\Components\Filter;
 use Tapper\Console\State\AppState;
 use Tapper\Console\Windows\Main;
 use Tapper\Console\Windows\Popup;
@@ -32,6 +33,8 @@ class Application
     private Component $window;
 
     private Popup $popup;
+
+    private Filter $filter;
 
     private Area $area;
 
@@ -83,6 +86,20 @@ class Application
     {
         $this->window = $this->container->make(Main::class);
         $this->popup = $this->container->make(Popup::class);
+        $this->filter = $this->container->make(Filter::class);
+
+        // Filter's own key bindings are non-global (see Filter.php), so it needs its
+        // isActive toggled explicitly — mirrors Main::afterInit()'s LogList/Details dance.
+        // Synchronous (no futureTick): typing a filter query can drain several char events
+        // from one stdin read, all dispatched within the same tick, and Filter needs to be
+        // active in time to catch them — see the matching note in Main::afterInit().
+        $this->appState->observe('typingMode', function (bool $typing): void {
+            if ($typing) {
+                $this->filter->activate();
+            } else {
+                $this->filter->deactivate();
+            }
+        });
     }
 
     private function startRendering(): void
@@ -114,6 +131,10 @@ class Application
             $widgets[] = $this->popup->render($area);
         }
 
+        if ($this->appState->typingMode) {
+            $widgets[] = $this->filter->render($area);
+        }
+
         $composite = CompositeWidget::fromWidgets(...$widgets);
 
         $this->display->draw($composite);
@@ -126,13 +147,24 @@ class Application
             $this->eventParser->advance($data, false);
 
             foreach ($this->eventParser->drain() as $event) {
+                // Captured before handleEvent(): if this exact event is the one that just
+                // flipped typingMode on (e.g. the '/' that starts a filter), it shouldn't
+                // also be treated as typed filter input — that key press activates typing
+                // mode, it doesn't type into it.
+                $wasTyping = $this->appState->typingMode;
+
                 $this->handleEvent($event);
-                $this->handleEventInTypingMode($event, $data);
+
+                if ($wasTyping) {
+                    $this->handleEventInTypingMode($event);
+                }
             }
 
             // `stty raw` (enabled by Terminal::enableRawMode()) disables ISIG, so Ctrl+C
             // never reaches us as SIGINT — it arrives as byte 0x03 (ETX) on stdin instead.
-            if ($data === 'q' || $data === "\x03") {
+            // Ctrl+C always quits; 'q' only quits outside typing mode, since it's a normal
+            // character you'd type into the filter box otherwise.
+            if ($data === "\x03" || (! $this->appState->typingMode && $data === 'q')) {
                 $this->close();
             }
         });
@@ -151,7 +183,7 @@ class Application
         }
     }
 
-    private function handleEventInTypingMode(Event $event, $data): void
+    private function handleEventInTypingMode(Event $event): void
     {
         if (! $this->appState->typingMode) {
             return;
@@ -166,12 +198,15 @@ class Application
         }
 
         if ($event instanceof CharKeyEvent) {
-            $this->eventBus->emit('input', ['data' => $data]);
+            // Emit the event's own char, not the raw stdin chunk — a single stdin read can
+            // drain multiple events (fast typing/paste), and they'd otherwise all share the
+            // same raw bytes, duplicating input.
+            $this->eventBus->emit('input', ['char' => $event->char]);
 
             return;
         }
 
-        if ($event->code === KeyCode::Esc) {
+        if ($event instanceof CodedKeyEvent && $event->code === KeyCode::Esc) {
             $this->appState->typingMode = false;
 
             return;

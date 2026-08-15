@@ -52,6 +52,8 @@ class Popup extends Component
             ['enter', '', 'Continue a paused wait'],
             ['backspace', 'esc', 'Close details / back to live'],
             ['ctrl+l', '', 'Clear all logs'],
+            ['/', '', 'Filter logs'],
+            ['enter', 'esc', 'Confirm / cancel filter'],
             ['?', '', 'Toggle this help'],
             ['q', '', 'Quit'],
         ];

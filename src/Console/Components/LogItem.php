@@ -30,9 +30,15 @@ class LogItem extends Component
 
     private ?LogItemState $log = null;
 
-    public function setData(?LogItemState $log): void
+    // Position of $log within the currently displayed (possibly filtered) list — NOT
+    // $log->id, which is a permanent identifier assigned when the log was received and
+    // only coincidentally matches list position when nothing is filtered out.
+    private ?int $index = null;
+
+    public function setData(?LogItemState $log, ?int $index = null): void
     {
         $this->log = $log;
+        $this->index = $index;
     }
 
     #[Mouse(MouseEventKind::Down, global: true)]
@@ -41,11 +47,11 @@ class LogItem extends Component
         /** @var MouseEvent $event */
         $event = $data['event'];
 
-        if (! $this->log) {
+        if (! $this->log || $this->index === null) {
             return;
         }
 
-        $elementPosInView = ($this->log->id - $this->appState->offset);
+        $elementPosInView = ($this->index - $this->appState->offset);
         $itemPosition = ($elementPosInView * self::HEIGHT) + 1;
 
         if ($event->row > $itemPosition
@@ -59,10 +65,14 @@ class LogItem extends Component
 
     public function click(): void
     {
-        if ($this->appState->cursor === $this->log->id) {
+        if ($this->index === null) {
+            return;
+        }
+
+        if ($this->appState->cursor === $this->index) {
             $this->appState->previewLog = $this->log;
         } else {
-            $this->appState->cursor = $this->log->id;
+            $this->appState->cursor = $this->index;
         }
     }
 
@@ -112,7 +122,7 @@ class LogItem extends Component
         $dt = DateTime::createFromFormat('U.u', sprintf('%.6f', $this->log->timestamp));
         $time = $dt->format('H:i:s.u');
 
-        $mark = $this->appState->cursor === $this->log->id;
+        $mark = $this->index !== null && $this->appState->cursor === $this->index;
 
         $darkGray = Style::default()->darkGray();
         $markerColor = RgbColor::fromHex(Palette::SELECTION_BG);
