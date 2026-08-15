@@ -82,6 +82,18 @@ class LogList extends Component
         $this->scroll->scrollDown($this->count, $this->visible);
     }
 
+    #[KeyPressed('g')]
+    public function jumpToTop(): void
+    {
+        $this->scroll->jump(0, $this->count, $this->visible);
+    }
+
+    #[KeyPressed('G')]
+    public function jumpToBottom(): void
+    {
+        $this->scroll->jump($this->count - 1, $this->count, $this->visible);
+    }
+
     #[KeyPressed('u', KeyModifiers::CONTROL)]
     public function pageUp(): void
     {

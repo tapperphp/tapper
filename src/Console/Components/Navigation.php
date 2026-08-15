@@ -14,6 +14,7 @@ use PhpTui\Tui\Widget\Borders;
 use PhpTui\Tui\Widget\BorderType;
 use PhpTui\Tui\Widget\Widget;
 use Tapper\Console\Component;
+use Tapper\Console\Palette;
 
 class Navigation extends Component
 {
@@ -23,14 +24,14 @@ class Navigation extends Component
 
         $waiting = $this->appState->pendingWaits > 0;
 
-        $buttonStyle = Style::default()->fg(RgbColor::fromHex('7aa2f7'));
-        $descStyle = Style::default()->fg(RgbColor::fromHex('7aa2f7'));
+        $buttonStyle = Style::default()->fg(RgbColor::fromHex(Palette::ACCENT));
+        $descStyle = Style::default()->fg(RgbColor::fromHex(Palette::ACCENT));
         $delimiter = Span::styled(' | ', $descStyle);
 
         $instruction = [];
 
         if (! $this->appState->live && ! $this->appState->previewLog) {
-            $instruction[] = Span::styled('Live: ', $descStyle, $descStyle);
+            $instruction[] = Span::styled('Live: ', $descStyle);
             $instruction[] = Span::styled('esc', $buttonStyle);
             $instruction[] = $delimiter;
         }
