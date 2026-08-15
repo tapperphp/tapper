@@ -32,6 +32,7 @@ src/
     EventBus.php               Pub/sub used for key/mouse/custom events
     CommandInvoker.php          Thin wrapper around php-di's Invoker (see Commands note below)
     MessageFormatter.php        JSON syntax highlighting for log payloads
+    PhpHighlighter.php           PHP syntax highlighting (native token_get_all) for the code excerpt in Details
     CommandAttributes/          #[KeyPressed] #[Mouse] #[OnEvent] #[Periodic] #[FirstRender]
     Commands/Command.php        Abstract marker class — currently has zero implementations (see known-issues.md)
     Components/                 Header, LogList, LogItem, Details, Navigation, Splash, Filter (the `/` filter input line, see typingMode below)
