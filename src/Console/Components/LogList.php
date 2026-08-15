@@ -102,6 +102,27 @@ class LogList extends Component
         $this->appState->previewLog = $this->appState->logs()[$this->appState->cursor];
     }
 
+    #[KeyPressed(KeyCode::Enter)]
+    public function selectUnlessWaiting(): void
+    {
+        if ($this->appState->pendingWaits > 0) {
+            return;
+        }
+
+        $this->select();
+    }
+
+    #[KeyPressed('l', KeyModifiers::CONTROL, global: true)]
+    public function clear(): void
+    {
+        $this->appState->previewLog = null;
+        $this->appState->live = true;
+        $this->appState->logs = [];
+        $this->appState->cursor = 0;
+        $this->appState->offset = 0;
+        $this->appState->unread = 0;
+    }
+
     #[KeyPressed(KeyCode::Esc)]
     public function backToLive(): void
     {

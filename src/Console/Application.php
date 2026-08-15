@@ -107,7 +107,7 @@ class Application
     {
         $widgets = [$this->window->render($area)];
 
-        if ($this->popup->isActive()) {
+        if ($this->appState->popupOpen) {
             $widgets[] = $this->popup->render($area);
         }
 

@@ -17,9 +17,16 @@ class Header extends Component
 {
     protected function view(Area $area): Widget
     {
+        $waiting = $this->appState->pendingWaits > 0;
         $live = $this->appState->live;
 
         $unread = $this->appState->unread > 0;
+
+        [$dot, $label] = match (true) {
+            $waiting => [Span::fromString('⏳')->yellow(), 'WAIT'],
+            $live => [Span::fromString('●')->red(), 'LIVE'],
+            default => [Span::fromString('⏸')->blue(), 'PAUSED'],
+        };
 
         return
             BlockWidget::default()
@@ -28,9 +35,9 @@ class Header extends Component
                 ->widget(
                     ParagraphWidget::fromSpans(
                         Span::fromString(' '),
-                        $live ? Span::fromString('●')->red() : Span::fromString('⏸')->blue(),
+                        $dot,
                         Span::fromString(' '),
-                        Span::fromString($live ? 'LIVE' : 'PAUSED'),
+                        Span::fromString($label),
                         $unread ? Span::fromString(sprintf(' (↓%s)', $this->appState->unread))->yellow() : Span::fromString(''),
                         Span::fromString(' | '),
                         Span::fromString(sprintf('port: %s', $this->appState->port)),
