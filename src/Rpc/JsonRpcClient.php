@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Tapper\Rpc;
 
+use Tapper\SocketPath;
+
 class JsonRpcClient
 {
     public function __construct(
@@ -17,7 +19,7 @@ class JsonRpcClient
     {
         $payload = $jsonRpc->payload();
 
-        $socket = @stream_socket_client("tcp://{$this->host}:{$this->port}", $errno, $errstr, $this->timeout);
+        $socket = @stream_socket_client('unix://'.SocketPath::resolve(), $errno, $errstr, $this->timeout);
 
         if (! $socket) {
             return null;
