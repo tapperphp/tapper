@@ -7,6 +7,7 @@ namespace Tapper;
 use Clue\React\NDJson\Decoder;
 use Clue\React\NDJson\Encoder;
 use PhpTui\Term\KeyCode;
+use React\Socket\ConnectionInterface;
 use React\Socket\SocketServer;
 use Tapper\Console\EventBus;
 use Tapper\Console\State\AppState;
@@ -32,7 +33,7 @@ class Server
         @unlink($socketPath);
         $server = new SocketServer('unix://'.$socketPath);
 
-        $server->on('connection', function (\React\Socket\ConnectionInterface $conn) {
+        $server->on('connection', function (ConnectionInterface $conn) {
             $decoder = new Decoder($conn, true);
             $encoder = new Encoder($conn, true);
 
