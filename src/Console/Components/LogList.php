@@ -111,7 +111,13 @@ class LogList extends Component
     #[KeyPressed(' ')]
     public function select(): void
     {
-        $this->appState->previewLog = $this->appState->logs()[$this->appState->cursor];
+        $log = $this->appState->logs()[$this->appState->cursor] ?? null;
+
+        if ($log === null) {
+            return;
+        }
+
+        $this->appState->previewLog = $log;
     }
 
     #[KeyPressed(KeyCode::Enter)]

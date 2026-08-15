@@ -12,47 +12,38 @@ Verified with an isolated smoke test (no terminal required): booted `Server` dir
 
 Note: `SocketPath::resolve()` still resolves to "the installed package's own directory" (`realpath(__DIR__.'/..')`), same semantics as the original `Server.php` code — when Tapper is installed as a dependency, that's `vendor/tapperphp/tapper/tapper.sock`, not the consuming project's root. That's fine functionally (both processes resolve the same install, so they agree), but if this ever needs to be more conventional (e.g. `sys_get_temp_dir()`-based, to avoid touching `vendor/`), that's a deliberate follow-up, not part of this fix.
 
-### `wait()` listeners on `EventBus` are never cleaned up
+### ~~`wait()` listeners on `EventBus` are never cleaned up~~ — fixed 2026-08-15
 
-See `rpc-protocol.md`'s `wait` section — every `tp(...)->wait()` call adds a permanent `KeyCode::Enter` listener to `EventBus` that's never removed, even after it fires. Two overlapping `wait()` calls will both resolve on the same keypress instead of one at a time. `EventBus` has no unsubscribe mechanism at all today (see below).
+Previously every `tp(...)->wait()` call added a permanent `KeyCode::Enter` listener to `EventBus`, never removed, so overlapping `wait()` calls all resolved on the same keypress instead of one at a time. Fixed in `Server.php`: wait resolvers are now pushed onto a FIFO queue (`$waitResolvers`), and a single `KeyCode::Enter` listener is registered once (`registerWaitListener()`, guarded by `$waitListenerRegistered`) that pops and resolves the oldest pending wait per keypress. No per-call listener is added anymore, so there's nothing to leak, and N overlapping waits now require N separate Enter presses, in order. `EventBus` itself still has no general unsubscribe mechanism — see below, this remains a real gap for any future feature with dynamic listener lifecycles.
 
-### `Application::run()` registers signal handlers after the blocking call that would need them
+### ~~`Application::run()` registers signal handlers after the blocking call that would need them~~ — fixed 2026-08-15
 
-```php
-$this->loop->run();                                   // blocks until loop stops
+`addSignal(SIGINT, ...)`/`addSignal(SIGTERM, ...)` are now registered before `$this->loop->run()`, so they're actually reachable, and their bodies call `$this->close()` (restores raw mode, mouse capture, cursor, alternate screen) instead of `echo 'kill'`. **This alone does not make Ctrl+C work**, though — see below.
 
-$this->loop->addSignal(SIGINT, function () { echo 'kill'; });
-$this->loop->addSignal(SIGTERM, function () { echo 'kill'; });
-```
+### Ctrl+C did nothing even after the signal-handler fix above — fixed 2026-08-15
 
-Both `addSignal` calls are unreachable until `loop->run()` returns, at which point registering them is moot. Move them before `$this->loop->run()`. Also worth deciding what SIGINT/SIGTERM *should* do — right now the handler bodies just `echo 'kill'` rather than calling `$this->close()` to restore the terminal, so a Ctrl+C could leave the terminal in raw/alternate-screen mode.
+Root cause: `Terminal::enableRawMode()` shells out to `stty raw` (`vendor/php-tui/term/src/RawMode/SttyRawMode.php`), which disables `ISIG` at the tty driver level. With `ISIG` off, Ctrl+C is never translated into a `SIGINT` signal in the first place — it arrives as a normal byte, `\x03` (ETX), on stdin, same as any other keypress. So `$this->loop->addSignal(SIGINT, ...)` was structurally unreachable for the Ctrl+C case specifically, regardless of registration order (it still matters for external `kill -INT`/`SIGTERM`, which aren't tty-mediated). Fixed in `Application::startInputHandling()` by treating `"\x03"` the same as the existing `'q'` raw-byte check — both now call `$this->close()`.
 
-### `AppState` batching bug (documented in-code, unresolved)
+### ~~`AppState` batching bug (documented in-code, unresolved)~~ — fixed 2026-08-15
 
-`src/Console/State/AppState.php`, directly above `__set`:
+`$changed` was a list, so `__set`-ing the same field repeatedly while batched (e.g. pressing Enter many times while `tp()->wait()` is paused) appended a duplicate entry per write, growing unbounded and replaying that field's observers once per duplicate on `commit()`. Fixed by keying `$changed` on field name (`$this->changed[$name] = true`) so it behaves as a set; `commit()` iterates `array_keys($this->changed)`. Same fix applied to `appendLog()`'s batched branch (`'logs'` key).
 
-```php
-/*
- * @TODO investigate why `changed` overflows
- * when setting something multiple times,
- * like pressing enter many times
- * when waiting is set on tp
- */
-```
+### ~~`JsonRpcRequest::payload()` references an undefined `$id`~~ — fixed 2026-08-15
 
-Don't build new logic on `deffer()`/`commit()` batching until this is diagnosed — prefer unbatched (direct) `__set` calls if a new feature doesn't clearly need batching.
+Added a real `private ?string $id = null` constructor parameter; `payload()` now reads `$this->id ?? uniqid('rpc_', true)` instead of an undefined `$id` that only worked by accident via `??`'s notice suppression.
 
-### `JsonRpcRequest::payload()` references an undefined `$id`
+### ~~`Server::$id` is `static` inside a container-managed singleton~~ — fixed 2026-08-15
 
-```php
-'id' => $id ?? uniqid('rpc_', true),
-```
+Changed to `private int $id = 0` (instance property), consistent with the rest of the class's DI-managed design.
 
-`$id` is never assigned in scope, so this always evaluates to `uniqid('rpc_', true)` — it works, but only because of PHP's `??` suppressing the undefined-variable notice, not because there's an actual optional-id feature. Either add a real `?string $id = null` constructor parameter to `JsonRpcRequest` if per-request ids are wanted, or simplify to a direct `uniqid('rpc_', true)` call and drop the `??`.
+### ~~PHP warnings/notices printed straight onto the live TUI, corrupting the render~~ — fixed 2026-08-16
 
-### `Server::$id` is `static` inside a container-managed singleton
+Reported case: pressing Space in `LogList` with zero log entries hit `LogList::select()` reading `$this->appState->logs()[$this->appState->cursor]` with an empty `logs` array — an undefined-array-key warning, repeated once per render tick, each one printed raw over the alternate-screen buffer. Two fixes:
 
-`Server` is constructor-injected with `AppState`/`EventBus` (i.e., it's a normal DI-managed instance), but its log-id counter is `private static $id = 0`. Harmless today (one `Server` instance ever exists), but inconsistent with the rest of the class's design and would break if `Server` were ever instantiated more than once (e.g. in a test). Make it an instance property.
+1. Root cause: `LogList::select()` now reads via `?? null` and no-ops when there's no log at the cursor, instead of indexing blind.
+2. General case: `Console\ErrorHandler::install()` (called first thing in `Application::run()`, before raw mode/alt-screen are enabled) installs a `set_error_handler` that logs any warning/notice/deprecation to `tapper.log` (`LogPath::resolve()`, same directory as `tapper.sock`) and sets a 5-second `AppState::errorNotice` banner (rendered by `Header`) instead of letting PHP print to stdout. Uncaught `Throwable`s still propagate normally — `bin/tapper`'s `catch (\Throwable $e)` (widened from `\Exception`) calls `Application::close()` to restore the terminal, logs via `ErrorHandler::logThrowable()`, then rethrows so the trace prints on a normal, restored terminal rather than corrupting the TUI.
+
+Note: this intentionally does *not* revive `Windows/Popup.php` for the "check the logs" notice — see the dead-scaffolding entry below; the banner lives in `Header` via two new `AppState` fields (`errorNotice`, `errorNoticeExpiresAt`) instead.
 
 ## Incomplete abstractions (finish or remove, don't extend as-is)
 
@@ -61,7 +52,7 @@ Don't build new logic on `deffer()`/`commit()` batching until this is diagnosed 
 - **`docs/openrpc.json`** — describes a method (`appendLog`, nested `details` param) that doesn't match the implemented protocol (`log`/`wait`, flat params). Regenerate from `Server.php` or delete.
 - **`Windows/Popup.php`** — exists, is instantiated and checked (`Application::draw()` renders it when `isActive()`), but its `view()` just returns an empty `BlockWidget::default()` and nothing in the codebase ever calls `activate()` on it (confirmed by grep — zero hits). Dead scaffolding for a not-yet-built feature (likely a modal/dialog system) — fine to leave, but don't assume it's a working popup system if you go looking for one.
 - **`AppState::typingMode` is only ever set to `false`**, never `true`, anywhere in the codebase (confirmed by grep). `Application::handleEventInTypingMode()` therefore always returns early — its entire body (redirecting character input, exiting on Esc) is currently unreachable dead code, presumably scaffolding for a not-yet-built text-input feature.
-- **`EventBus` has no unsubscribe** — every `listen()` is permanent. This is fine for the fixed component tree Tapper has today (components are never torn down mid-run), but is a real gap the moment anything needs dynamic component lifecycles (the `wait()` bug above is a direct symptom of this gap).
+- **`EventBus` has no unsubscribe** — every `listen()` is permanent. This is fine for the fixed component tree Tapper has today (components are never torn down mid-run), but is a real gap the moment anything needs dynamic component lifecycles. (The `wait()` leak that used to be a direct symptom of this gap is fixed above by having `Server` register one permanent listener instead of one per call — that sidesteps the gap for this one case, it doesn't close it.)
 
 ## Framework-extraction readiness
 

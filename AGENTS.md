@@ -22,9 +22,12 @@ src/
   Runtime/Tapper.php         Client side: collects debug info, sends it over the wire, blocks for the reply
   Rpc/                       Minimal JSON-RPC-ish request/response types + blocking socket client
   Server.php                 TUI-process side: unix socket server, decodes requests, mutates AppState
+  SocketPath.php              Resolves the shared unix-socket path
+  LogPath.php                 Resolves tapper.log's path (same directory as the socket)
   Console/
     main.php                 DI container wiring (php-di) for the TUI process
     Application.php           Owns the ReactPHP event loop: render timer, resize timer, input handling
+    ErrorHandler.php            Redirects PHP warnings/notices (and, via bin/tapper, uncaught throwables) to tapper.log instead of stdout, which would otherwise corrupt the raw-mode/alt-screen render
     Component.php             Base class for every UI component (see docs/console-framework.md)
     EventBus.php               Pub/sub used for key/mouse/custom events
     CommandInvoker.php          Thin wrapper around php-di's Invoker (see Commands note below)

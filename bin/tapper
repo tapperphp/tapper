@@ -9,7 +9,8 @@ $app = (require_once __DIR__.'/../src/Console/main.php');
 
 try {
     $app->run();
-} catch (\Exception $e) {
+} catch (\Throwable $e) {
     $app->close();
+    \Tapper\Console\ErrorHandler::logThrowable($e);
     throw $e;
 }
