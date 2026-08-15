@@ -49,6 +49,7 @@ class Popup extends Component
             ['g', 'G', 'Jump to top / bottom'],
             ['Ctrl+u', 'Ctrl+d', 'Page up / down'],
             ['space', 'enter', 'Open details'],
+            ['h / ←', 'l / →', 'Scroll details horizontally'],
             ['enter', '', 'Continue a paused wait'],
             ['backspace', 'esc', 'Close details / back to live'],
             ['ctrl+l', '', 'Clear all logs'],

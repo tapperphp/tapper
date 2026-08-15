@@ -19,6 +19,7 @@ use RuntimeException;
  * @property array $logs
  * @property int $detailsCursor
  * @property int $detailsOffset
+ * @property int $detailsHOffset
  * @property int $pendingWaits
  * @property bool $popupOpen
  * @property ?string $errorNotice
@@ -51,6 +52,7 @@ class AppState
         private array $logs = [],
         private int $detailsCursor = 0,
         private int $detailsOffset = 0,
+        private int $detailsHOffset = 0,
         private int $pendingWaits = 0,
         private bool $popupOpen = false,
         private ?string $errorNotice = null,

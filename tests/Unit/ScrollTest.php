@@ -212,3 +212,37 @@ describe('scrollbar state', function () {
         expect($state->position)->toBe($state->contentLength);
     });
 });
+
+describe('proportional thumb', function () {
+    it('returns null when everything already fits on screen', function () {
+        expect(Scroll::proportionalThumb(count: 5, visible: 20, offset: 0, trackHeight: 20))->toBeNull();
+    });
+
+    it('sizes the thumb against the true visible/count ratio, not scrollbarState\'s count-visible one', function () {
+        // Regression: with count=13, visible=8, scrollbarState()'s contentLength is only
+        // 5 (count - visible), so feeding that into ScrollbarRenderer's size formula
+        // (viewport / contentLength) gives 8/5 > 1 — a thumb that fills the whole
+        // 8-row track even though barely more than half the content is visible.
+        [$start, $end] = Scroll::proportionalThumb(count: 13, visible: 8, offset: 0, trackHeight: 8);
+
+        expect($end - $start)->toBe((int) round((8 / 13) * 8))
+            ->and($end - $start)->toBeLessThan(8);
+    });
+
+    it('starts the thumb at the top when offset is 0', function () {
+        [$start] = Scroll::proportionalThumb(count: 13, visible: 8, offset: 0, trackHeight: 8);
+
+        expect($start)->toBe(0);
+    });
+
+    it('reaches the very bottom of the track at the max offset', function () {
+        $count = 13;
+        $visible = 8;
+        $trackHeight = 8;
+        $maxOffset = $count - $visible;
+
+        [, $end] = Scroll::proportionalThumb($count, $visible, $maxOffset, $trackHeight);
+
+        expect($end)->toBe($trackHeight);
+    });
+});
