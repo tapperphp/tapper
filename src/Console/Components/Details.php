@@ -27,6 +27,7 @@ use Tapper\Console\CommandAttributes\Mouse;
 use Tapper\Console\Component;
 use Tapper\Console\MessageFormatter;
 use Tapper\Console\Palette;
+use Tapper\Console\PhpHighlighter;
 use Tapper\Console\Support\Scroll;
 
 class Details extends Component
@@ -83,21 +84,32 @@ class Details extends Component
 
     private function parseCode(array $code): array
     {
-        return array_map(function ($line) {
-            $style = Style::default()->darkGray();
+        $numberWidth = array_reduce(
+            $code,
+            fn (int $width, array $line): int => max($width, strlen((string) $line['number'])),
+            1,
+        );
 
-            if ($line['active']) {
-                $style = $style->lightGreen();
-            }
+        return array_map(function ($line) use ($numberWidth) {
+            $active = $line['active'];
 
-            $codeLine = sprintf(
-                ' %s %s│ %s',
-                $line['number'],
-                $line['active'] ? '➔' : ' ',
-                $line['line'],
+            $prefixStyle = $active
+                ? Style::default()->fg(RgbColor::fromHex(Palette::ACCENT))
+                : Style::default()->darkGray();
+
+            $prefix = Span::styled(
+                sprintf(' %s %s│ ', str_pad((string) $line['number'], $numberWidth, ' ', STR_PAD_LEFT), $active ? '➔' : ' '),
+                $prefixStyle,
             );
 
-            return ListItem::fromString($codeLine)->style($style);
+            $lineSpans = [$prefix, ...PhpHighlighter::highlightLine($line['line'])];
+            $item = ListItem::new(Text::fromLine(new Line($lineSpans)));
+
+            if ($active) {
+                $item = $item->style(Style::default()->bg(RgbColor::fromHex(Palette::SELECTION_BG)));
+            }
+
+            return $item;
         }, $code);
     }
 
