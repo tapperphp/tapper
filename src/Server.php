@@ -83,13 +83,17 @@ class Server
                         ));
 
                         self::$id++;
+                        $this->appState->pendingWaits++;
 
-                        $this->eventBus->listen(KeyCode::Enter, fn () => ($encoder->write([
-                            'jsonrpc' => '2.0',
-                            'result' => 'continue',
-                            'id' => $id,
-                        ])
-                        ));
+                        $this->eventBus->listen(KeyCode::Enter, function () use ($encoder, $id) {
+                            $encoder->write([
+                                'jsonrpc' => '2.0',
+                                'result' => 'continue',
+                                'id' => $id,
+                            ]);
+
+                            $this->appState->pendingWaits = max(0, $this->appState->pendingWaits - 1);
+                        });
 
                         break;
 

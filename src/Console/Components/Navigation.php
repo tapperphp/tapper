@@ -21,6 +21,8 @@ class Navigation extends Component
     {
         $this->area = $area;
 
+        $waiting = $this->appState->pendingWaits > 0;
+
         $buttonStyle = Style::default()->fg(RgbColor::fromHex('7aa2f7'));
         $descStyle = Style::default()->fg(RgbColor::fromHex('7aa2f7'));
         $delimiter = Span::styled(' | ', $descStyle);
@@ -36,20 +38,17 @@ class Navigation extends Component
         if ($this->appState->previewLog) {
             $instruction[] = Span::styled('Back: ', $descStyle);
             $instruction[] = Span::styled('backspace', $buttonStyle);
-            $instruction[] = $delimiter;
+        } elseif ($waiting) {
+            $instruction[] = Span::styled('Continue: ', $descStyle);
+            $instruction[] = Span::styled('enter', $buttonStyle);
         } else {
             $instruction[] = Span::styled('Details: ', $descStyle);
-            $instruction[] = Span::styled('space', $buttonStyle);
-            $instruction[] = $delimiter;
-
+            $instruction[] = Span::styled('enter/space', $buttonStyle);
         }
 
-        $instruction[] = Span::styled('Continue: ', $descStyle);
-        $instruction[] = Span::styled('enter', $buttonStyle);
         $instruction[] = $delimiter;
-
-        $instruction[] = Span::styled('Navigation: ', $descStyle);
-        $instruction[] = Span::styled('↑/↓', $buttonStyle);
+        $instruction[] = Span::styled('Shortcuts: ', $descStyle);
+        $instruction[] = Span::styled('?', $buttonStyle);
         $instruction[] = $delimiter;
 
         $instruction[] = Span::styled('Quit: ', $descStyle);

@@ -37,11 +37,32 @@ class Main extends Component
 
         $this->appState->observe('previewLog', function (?LogItem $log) {
             Loop::futureTick(function () use ($log) {
+                if ($this->appState->popupOpen) {
+                    return;
+                }
+
                 if ($log) {
                     $this->componentInstances[Details::class]->activate();
                     $this->componentInstances[LogList::class]->deactivate();
                 } else {
                     $this->componentInstances[Details::class]->deactivate();
+                    $this->componentInstances[LogList::class]->activate();
+                }
+            });
+        });
+
+        $this->appState->observe('popupOpen', function (bool $open) {
+            Loop::futureTick(function () use ($open) {
+                if ($open) {
+                    $this->componentInstances[Details::class]->deactivate();
+                    $this->componentInstances[LogList::class]->deactivate();
+
+                    return;
+                }
+
+                if ($this->appState->previewLog) {
+                    $this->componentInstances[Details::class]->activate();
+                } else {
                     $this->componentInstances[LogList::class]->activate();
                 }
             });
