@@ -38,6 +38,18 @@ $scenarios = [
         $line = fgets(STDIN);
         tp(trim($line ?: ''));
     }],
+    '9' => ['label' => 'Exception (tp($throwable))', 'run' => function () {
+        try {
+            throw new \RuntimeException('Something went wrong while processing the request');
+        } catch (\Throwable $e) {
+            tp($e);
+        }
+    }],
+    '10' => ['label' => 'Repeated identical log (×N counter test)', 'run' => function () {
+        for ($i = 0; $i < 5; $i++) {
+            tp('Same message every time');
+        }
+    }],
 ];
 
 echo "Tapper dev menu — make sure `php bin/tapper` is running in another terminal.\n";

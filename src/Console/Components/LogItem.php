@@ -125,11 +125,23 @@ class LogItem extends Component
             Span::styled($time, Style::default()->fg(RgbColor::fromHex(Palette::ACCENT))),
         );
 
-        $messageSpans = $this->log->kind === 'wait'
-            ? [Span::styled($message, Style::default()->yellow())]
-            : MessageFormatter::colorizeInlineJson($message);
+        $messageSpans = match ($this->log->kind) {
+            'wait' => [Span::styled($message, Style::default()->yellow())],
+            'error' => [Span::styled($message, Style::default()->fg(RgbColor::fromHex(Palette::ERROR)))],
+            default => MessageFormatter::colorizeInlineJson($message),
+        };
 
-        $wMess = ParagraphWidget::fromSpans(...$this->truncateSpans($messageSpans, $messageWidth, $darkGray));
+        $repeatBadge = $this->log->repeatCount > 1
+            ? Span::styled(sprintf(' ×%d', $this->log->repeatCount), Style::default()->fg(RgbColor::fromHex(Palette::ACCENT)))
+            : null;
+
+        $messageSpans = $this->truncateSpans($messageSpans, $messageWidth - ($repeatBadge?->width() ?? 0), $darkGray);
+
+        if ($repeatBadge) {
+            $messageSpans[] = $repeatBadge;
+        }
+
+        $wMess = ParagraphWidget::fromSpans(...$messageSpans);
         $wFile = ParagraphWidget::fromSpans(
             ...$this->truncateSpans([Span::styled(sprintf('↪ %s', $this->log->caller), $darkGray)], $messageWidth, $darkGray),
         );

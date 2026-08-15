@@ -15,5 +15,6 @@ class LogItem
         public string $rootDir,
         public array $code,
         public string $kind = 'log',
+        public int $repeatCount = 1,
     ) {}
 }

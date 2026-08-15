@@ -19,11 +19,15 @@ class Tapper
 
     private string $type = 'log';
 
+    private ?string $kind = null;
+
     private array $trace = [];
 
     private ?string $rootDir = null;
 
     private array $callerToGet;
+
+    private ?array $code = null;
 
     public function __construct()
     {
@@ -36,7 +40,31 @@ class Tapper
 
     public function tap(mixed $message): self
     {
+        if ($message instanceof \Throwable) {
+            return $this->tapThrowable($message);
+        }
+
         $this->message = $message;
+
+        return $this;
+    }
+
+    private function tapThrowable(\Throwable $throwable): self
+    {
+        $file = $throwable->getFile();
+        $line = $throwable->getLine();
+
+        $this->kind = 'error';
+        $this->message = sprintf('✕ %s: %s', get_class($throwable), $throwable->getMessage());
+        $this->caller = sprintf('%s:%s', basename($file), $line);
+        $this->trace = [
+            ['file' => $file, 'line' => $line],
+            ...array_map(fn (array $frame): array => [
+                'file' => $frame['file'] ?? null,
+                'line' => $frame['line'] ?? null,
+            ], $throwable->getTrace()),
+        ];
+        $this->code = $this->getCodeExcerpt($file, $line);
 
         return $this;
     }
@@ -119,7 +147,8 @@ class Tapper
             'microtime' => $this->microtime,
             'trace' => $this->trace,
             'rootDir' => $this->rootDir,
-            'code' => $this->getCodeExcerpt($this->callerToGet['file'], $this->callerToGet['line']),
+            'code' => $this->code ?? $this->getCodeExcerpt($this->callerToGet['file'], $this->callerToGet['line']),
+            'kind' => $this->kind,
         ];
 
         $request = new JsonRpcRequest(

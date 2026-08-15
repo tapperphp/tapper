@@ -65,9 +65,24 @@ class AppState
         $this->change = $change;
     }
 
-    public function appendLog(LogItem $logItem): void
+    /**
+     * @return bool true if a new entry was appended, false if it was merged
+     *              into the previous identical entry (its repeat counter bumped)
+     */
+    public function appendLog(LogItem $logItem): bool
     {
-        $this->logs[] = $logItem;
+        $last = $this->logs[count($this->logs) - 1] ?? null;
+        $isRepeat = $last
+            && $last->kind === $logItem->kind
+            && $last->message === $logItem->message
+            && $last->caller === $logItem->caller;
+
+        if ($isRepeat) {
+            $last->repeatCount++;
+        } else {
+            $this->logs[] = $logItem;
+        }
+
         if (! $this->batching) {
             $this->notifyChange();
             $this->callObservers('logs');
@@ -76,6 +91,8 @@ class AppState
         if ($this->batching) {
             $this->changed[] = 'logs';
         }
+
+        return ! $isRepeat;
     }
 
     public function observe(string $name, callable $callable): void
