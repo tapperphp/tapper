@@ -40,9 +40,10 @@ src/
     State/AppState.php           Central observable state store (magic __get/__set)
     State/LogItem.php            Value object for a single log entry
     Support/Scroll.php           Cursor/offset scrolling math — the best-tested module in the repo
+    Support/SpanTruncator.php    Clips/windows Span[] to a fixed width for fixed-width panes (Details, LogItem)
 docs/                         Deeper documentation — see docs/README.md
 examples/BasicExample.php     Runnable demo of the tp() API
-tests/Unit/                  ScrollTest.php, ScrollbarRenderTest.php — only test suites that currently exist
+tests/Unit/                  ScrollTest.php, ScrollbarRenderTest.php, SpanTruncatorTest.php — only test suites that currently exist
 ```
 
 ## Running things

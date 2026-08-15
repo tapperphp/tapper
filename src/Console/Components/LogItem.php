@@ -21,6 +21,7 @@ use Tapper\Console\Component;
 use Tapper\Console\MessageFormatter;
 use Tapper\Console\Palette;
 use Tapper\Console\State\LogItem as LogItemState;
+use Tapper\Console\Support\SpanTruncator;
 
 class LogItem extends Component
 {
@@ -76,43 +77,6 @@ class LogItem extends Component
         }
     }
 
-    /**
-     * @param  Span[]  $spans
-     * @return Span[]
-     */
-    private function truncateSpans(array $spans, int $maxWidth, Style $ellipsisStyle): array
-    {
-        $totalWidth = array_sum(array_map(fn (Span $span): int => $span->width(), $spans));
-
-        if ($totalWidth <= $maxWidth) {
-            return $spans;
-        }
-
-        $budget = max(0, $maxWidth - 1);
-        $truncated = [];
-
-        foreach ($spans as $span) {
-            if ($budget <= 0) {
-                break;
-            }
-
-            if ($span->width() <= $budget) {
-                $truncated[] = $span;
-                $budget -= $span->width();
-
-                continue;
-            }
-
-            $chars = array_slice(mb_str_split($span->content), 0, $budget);
-            $truncated[] = Span::styled(implode('', $chars), $span->style);
-            $budget = 0;
-        }
-
-        $truncated[] = Span::styled('…', $ellipsisStyle);
-
-        return $truncated;
-    }
-
     protected function view(Area $area): Widget
     {
         if (! $this->log) {
@@ -145,7 +109,7 @@ class LogItem extends Component
             ? Span::styled(sprintf(' ×%d', $this->log->repeatCount), Style::default()->fg(RgbColor::fromHex(Palette::ACCENT)))
             : null;
 
-        $messageSpans = $this->truncateSpans($messageSpans, $messageWidth - ($repeatBadge?->width() ?? 0), $darkGray);
+        $messageSpans = SpanTruncator::truncate($messageSpans, $messageWidth - ($repeatBadge?->width() ?? 0), $darkGray);
 
         if ($repeatBadge) {
             $messageSpans[] = $repeatBadge;
@@ -153,7 +117,7 @@ class LogItem extends Component
 
         $wMess = ParagraphWidget::fromSpans(...$messageSpans);
         $wFile = ParagraphWidget::fromSpans(
-            ...$this->truncateSpans([Span::styled(sprintf('↪ %s', $this->log->caller), $darkGray)], $messageWidth, $darkGray),
+            ...SpanTruncator::truncate([Span::styled(sprintf('↪ %s', $this->log->caller), $darkGray)], $messageWidth, $darkGray),
         );
 
         if ($mark) {
