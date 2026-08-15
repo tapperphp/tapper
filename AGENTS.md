@@ -34,14 +34,14 @@ src/
     MessageFormatter.php        JSON syntax highlighting for log payloads
     CommandAttributes/          #[KeyPressed] #[Mouse] #[OnEvent] #[Periodic] #[FirstRender]
     Commands/Command.php        Abstract marker class — currently has zero implementations (see known-issues.md)
-    Components/                 Header, LogList, LogItem, Details, Navigation, Splash
-    Windows/                    Main (root layout), Popup (stub, unused)
+    Components/                 Header, LogList, LogItem, Details, Navigation, Splash, Filter (the `/` filter input line, see typingMode below)
+    Windows/                    Main (root layout), Popup (working shortcuts modal, toggled with `?`)
     State/AppState.php           Central observable state store (magic __get/__set)
     State/LogItem.php            Value object for a single log entry
     Support/Scroll.php           Cursor/offset scrolling math — the best-tested module in the repo
 docs/                         Deeper documentation — see docs/README.md
 examples/BasicExample.php     Runnable demo of the tp() API
-tests/Unit/ScrollTest.php     Only test suite that currently exists
+tests/Unit/                  ScrollTest.php, ScrollbarRenderTest.php — only test suites that currently exist
 ```
 
 ## Running things

@@ -38,6 +38,7 @@ class LogList extends Component
         $this->scroll = new Scroll($this->appState);
 
         $this->appState->observe('logs', fn (): null => $this->updateLogs());
+        $this->appState->observe('filter', fn (): null => $this->updateFilter());
         $this->appState->observe('cursor', function (int $cursor): void {
             $this->appState->live = $cursor >= $this->count - 1;
         });
@@ -108,10 +109,23 @@ class LogList extends Component
         $this->scroll->jump($this->appState->cursor + $halfPage, $this->count, $this->visible);
     }
 
+    #[KeyPressed('/')]
+    public function startFilter(): void
+    {
+        // Only write if it's actually changing — __set() notifies unconditionally, and a
+        // no-op write here would still trigger updateFilter()'s jump-to-top before the user
+        // has typed anything.
+        if ($this->appState->filter !== '') {
+            $this->appState->filter = '';
+        }
+
+        $this->appState->typingMode = true;
+    }
+
     #[KeyPressed(' ')]
     public function select(): void
     {
-        $log = $this->appState->logs()[$this->appState->cursor] ?? null;
+        $log = $this->appState->filteredLogs()[$this->appState->cursor] ?? null;
 
         if ($log === null) {
             return;
@@ -139,11 +153,16 @@ class LogList extends Component
         $this->appState->cursor = 0;
         $this->appState->offset = 0;
         $this->appState->unread = 0;
+        $this->appState->filter = '';
     }
 
     #[KeyPressed(KeyCode::Esc)]
     public function backToLive(): void
     {
+        if ($this->appState->filter !== '') {
+            $this->appState->filter = '';
+        }
+
         $this->scroll->scrollToBottom($this->count, $this->visible);
     }
 
@@ -153,11 +172,22 @@ class LogList extends Component
             $this->appState->unread++;
         }
 
-        $this->count = count($this->appState->logs());
+        $this->refreshCount();
 
         if ($this->appState->live) {
             $this->scroll->scrollToBottom($this->count, $this->visible);
         }
+    }
+
+    private function updateFilter(): void
+    {
+        $this->refreshCount();
+        $this->scroll->jump(0, $this->count, $this->visible);
+    }
+
+    private function refreshCount(): void
+    {
+        $this->count = count($this->appState->filteredLogs());
     }
 
     private function ensureVisible(): void
@@ -180,8 +210,8 @@ class LogList extends Component
     {
         foreach ($this->listItems as $i => $component) {
             $logIndex = $this->appState->offset + $i;
-            $log = $this->appState->logs()[$logIndex] ?? null;
-            $component->setData($log);
+            $log = $this->appState->filteredLogs()[$logIndex] ?? null;
+            $component->setData($log, $logIndex);
         }
     }
 

@@ -75,6 +75,25 @@ class Main extends Component
                 }
             });
         });
+
+        // Deliberately synchronous, unlike the observers above: typing a filter query can
+        // drain several char events from a single stdin read (fast typing/paste), all
+        // dispatched within the same tick. Deferring LogList's deactivation to the next
+        // tick left it briefly still-active for those characters, alongside Application's
+        // Filter — a one-tick race that dropped/misrouted the first few keystrokes.
+        $this->appState->observe('typingMode', function (bool $typing) {
+            if ($typing) {
+                $this->componentInstances[LogList::class]->deactivate();
+
+                return;
+            }
+
+            if ($this->appState->previewLog) {
+                $this->componentInstances[Details::class]->activate();
+            } else {
+                $this->componentInstances[LogList::class]->activate();
+            }
+        });
     }
 
     protected function view(Area $area): Widget

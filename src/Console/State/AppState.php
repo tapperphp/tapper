@@ -23,6 +23,7 @@ use RuntimeException;
  * @property bool $popupOpen
  * @property ?string $errorNotice
  * @property float $errorNoticeExpiresAt
+ * @property string $filter
  */
 class AppState
 {
@@ -54,6 +55,7 @@ class AppState
         private bool $popupOpen = false,
         private ?string $errorNotice = null,
         private float $errorNoticeExpiresAt = 0.0,
+        private string $filter = '',
     ) {}
 
     /**
@@ -62,6 +64,21 @@ class AppState
     public function logs(): array
     {
         return $this->logs;
+    }
+
+    /**
+     * @return LogItem[]
+     */
+    public function filteredLogs(): array
+    {
+        if ($this->filter === '') {
+            return $this->logs;
+        }
+
+        return array_values(array_filter(
+            $this->logs,
+            fn (LogItem $log): bool => str_contains(strtolower($log->message), strtolower($this->filter)),
+        ));
     }
 
     public function setOnChange(callable $change): void
