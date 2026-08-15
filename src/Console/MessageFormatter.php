@@ -21,11 +21,11 @@ class MessageFormatter
 
     private const string NULL_COLOR = '2bc3de';
 
-    private const string BRACKETS_COLOR = 'c0caf5';
+    private const string BRACKETS_COLOR = Palette::TEXT_DEFAULT;
 
     private const string PUNCTUATION_COLOR = '89ddff';
 
-    private const string ERROR_COLOR = 'f7768e';
+    private const string ERROR_COLOR = Palette::ERROR;
 
     public static function colorizeInlineJson(string $json): array
     {

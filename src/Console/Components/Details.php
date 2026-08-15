@@ -18,6 +18,7 @@ use PhpTui\Tui\Extension\Core\Widget\Scrollbar\ScrollbarSymbols;
 use PhpTui\Tui\Extension\Core\Widget\ScrollbarWidget;
 use PhpTui\Tui\Style\Style;
 use PhpTui\Tui\Text\Line;
+use PhpTui\Tui\Text\Span;
 use PhpTui\Tui\Text\Text;
 use PhpTui\Tui\Widget\Widget;
 use Tapper\Console\CommandAttributes\KeyPressed;
@@ -136,7 +137,9 @@ class Details extends Component
         ];
         $infoListItems = array_map(fn ($line) => ListItem::new(Text::fromLine($line)), $info);
 
-        $formattedMessage = MessageFormatter::colorizeFormattedJson($log->message);
+        $formattedMessage = $log->kind === 'wait'
+            ? [Line::fromSpan(Span::styled($log->message, Style::default()->yellow()))]
+            : MessageFormatter::colorizeFormattedJson($log->message);
         $formattedListItems = array_map(fn ($line) => ListItem::new(Text::fromLine($line)), $formattedMessage);
 
         $allItems = [

@@ -13,19 +13,20 @@ use PhpTui\Tui\Extension\Core\Widget\GridWidget;
 use PhpTui\Tui\Extension\Core\Widget\ParagraphWidget;
 use PhpTui\Tui\Layout\Constraint;
 use PhpTui\Tui\Style\Style;
-use PhpTui\Tui\Text\Line;
 use PhpTui\Tui\Text\Span;
-use PhpTui\Tui\Text\Text;
 use PhpTui\Tui\Widget\Direction;
 use PhpTui\Tui\Widget\Widget;
 use Tapper\Console\CommandAttributes\Mouse;
 use Tapper\Console\Component;
 use Tapper\Console\MessageFormatter;
+use Tapper\Console\Palette;
 use Tapper\Console\State\LogItem as LogItemState;
 
 class LogItem extends Component
 {
-    public const int HEIGHT = 3;
+    public const int HEIGHT = 2;
+
+    private const int SCROLLBAR_GUTTER = 1;
 
     private ?LogItemState $log = null;
 
@@ -65,6 +66,43 @@ class LogItem extends Component
         }
     }
 
+    /**
+     * @param  Span[]  $spans
+     * @return Span[]
+     */
+    private function truncateSpans(array $spans, int $maxWidth, Style $ellipsisStyle): array
+    {
+        $totalWidth = array_sum(array_map(fn (Span $span): int => $span->width(), $spans));
+
+        if ($totalWidth <= $maxWidth) {
+            return $spans;
+        }
+
+        $budget = max(0, $maxWidth - 1);
+        $truncated = [];
+
+        foreach ($spans as $span) {
+            if ($budget <= 0) {
+                break;
+            }
+
+            if ($span->width() <= $budget) {
+                $truncated[] = $span;
+                $budget -= $span->width();
+
+                continue;
+            }
+
+            $chars = array_slice(mb_str_split($span->content), 0, $budget);
+            $truncated[] = Span::styled(implode('', $chars), $span->style);
+            $budget = 0;
+        }
+
+        $truncated[] = Span::styled('…', $ellipsisStyle);
+
+        return $truncated;
+    }
+
     protected function view(Area $area): Widget
     {
         if (! $this->log) {
@@ -77,35 +115,34 @@ class LogItem extends Component
         $mark = $this->appState->cursor === $this->log->id;
 
         $darkGray = Style::default()->darkGray();
-        $markerColor = RgbColor::fromHex('2a2e42');
+        $markerColor = RgbColor::fromHex(Palette::SELECTION_BG);
         $mStyle = Style::default()->bg($markerColor);
 
         $message = $this->log->message;
+        $messageWidth = max(0, $area->width - 17 - self::SCROLLBAR_GUTTER);
 
-        $firstLine = ParagraphWidget::fromText(
-            Text::fromLines(
-                Line::fromSpans(Span::styled("$time", Style::default()->fg(RgbColor::fromHex('7aa2f7')))),
-                Line::fromSpans(Span::styled('', $darkGray)),
-            )
+        $timeColumn = ParagraphWidget::fromSpans(
+            Span::styled($time, Style::default()->fg(RgbColor::fromHex(Palette::ACCENT))),
         );
 
-        $wMess = ParagraphWidget::fromSpans(...MessageFormatter::colorizeInlineJson($message));
-        $wFile = ParagraphWidget::fromSpans(Span::styled(sprintf('↪ %s', $this->log->caller), $darkGray));
+        $messageSpans = $this->log->kind === 'wait'
+            ? [Span::styled($message, Style::default()->yellow())]
+            : MessageFormatter::colorizeInlineJson($message);
+
+        $wMess = ParagraphWidget::fromSpans(...$this->truncateSpans($messageSpans, $messageWidth, $darkGray));
+        $wFile = ParagraphWidget::fromSpans(
+            ...$this->truncateSpans([Span::styled(sprintf('↪ %s', $this->log->caller), $darkGray)], $messageWidth, $darkGray),
+        );
 
         if ($mark) {
-            $firstLine->style($mStyle);
+            $timeColumn->style($mStyle);
             $wMess->style($mStyle);
             $wFile->style($mStyle);
         }
 
-        $firstLine = GridWidget::default()
+        $messageColumn = GridWidget::default()
             ->direction(Direction::Vertical)
-            ->constraints(Constraint::length(2), Constraint::length(1))
-            ->widgets($firstLine);
-
-        $secondLine = GridWidget::default()
-            ->direction(Direction::Vertical)
-            ->constraints(Constraint::length(1), Constraint::length(1), Constraint::length(1))
+            ->constraints(Constraint::length(1), Constraint::length(1))
             ->widgets(
                 $wMess,
                 $wFile,
@@ -117,10 +154,10 @@ class LogItem extends Component
                     ->direction(Direction::Horizontal)
                     ->constraints(
                         Constraint::length(17),
-                        Constraint::length($area->width - 17),
+                        Constraint::length($messageWidth),
                     )->widgets(
-                        $firstLine,
-                        $secondLine,
+                        $timeColumn,
+                        $messageColumn,
                     ),
             );
     }

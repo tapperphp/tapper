@@ -21,6 +21,7 @@ use PhpTui\Tui\Widget\HorizontalAlignment;
 use PhpTui\Tui\Widget\Widget;
 use Tapper\Console\CommandAttributes\KeyPressed;
 use Tapper\Console\Component;
+use Tapper\Console\Palette;
 
 class Popup extends Component
 {
@@ -40,11 +41,12 @@ class Popup extends Component
 
     protected function view(Area $area): Widget
     {
-        $keyStyle = Style::default()->fg(RgbColor::fromHex('7aa2f7'));
-        $descStyle = Style::default()->fg(RgbColor::fromHex('c0caf5'));
+        $keyStyle = Style::default()->fg(RgbColor::fromHex(Palette::ACCENT));
+        $descStyle = Style::default()->fg(RgbColor::fromHex(Palette::TEXT_DEFAULT));
 
         $shortcuts = [
             ['↑ / k', '↓ / j', 'Move cursor'],
+            ['g', 'G', 'Jump to top / bottom'],
             ['Ctrl+u', 'Ctrl+d', 'Page up / down'],
             ['space', 'enter', 'Open details'],
             ['enter', '', 'Continue a paused wait'],

@@ -80,6 +80,7 @@ class Server
                             $params['trace'],
                             $params['rootDir'],
                             $params['code'],
+                            kind: 'wait',
                         ));
 
                         self::$id++;

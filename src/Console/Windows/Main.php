@@ -5,10 +5,14 @@ declare(strict_types=1);
 namespace Tapper\Console\Windows;
 
 use PhpTui\Tui\Display\Area;
+use PhpTui\Tui\Extension\Core\Widget\BlockWidget;
 use PhpTui\Tui\Extension\Core\Widget\GridWidget;
+use PhpTui\Tui\Extension\Core\Widget\ParagraphWidget;
 use PhpTui\Tui\Layout\Constraint;
 use PhpTui\Tui\Layout\Layout;
+use PhpTui\Tui\Text\Line;
 use PhpTui\Tui\Widget\Direction;
+use PhpTui\Tui\Widget\HorizontalAlignment;
 use PhpTui\Tui\Widget\Widget;
 use React\EventLoop\Loop;
 use Tapper\Console\Component;
@@ -21,6 +25,10 @@ use Tapper\Console\State\LogItem;
 
 class Main extends Component
 {
+    private const int MIN_WIDTH = 40;
+
+    private const int MIN_HEIGHT = 8;
+
     protected array $components = [
         Header::class,
         Details::class,
@@ -71,6 +79,18 @@ class Main extends Component
 
     protected function view(Area $area): Widget
     {
+        if ($area->width < self::MIN_WIDTH || $area->height < self::MIN_HEIGHT) {
+            return BlockWidget::default()
+                ->widget(
+                    ParagraphWidget::fromLines(
+                        Line::fromString('Terminal too small')->alignment(HorizontalAlignment::Center),
+                        Line::fromString(sprintf('Resize to at least %dx%d', self::MIN_WIDTH, self::MIN_HEIGHT))
+                            ->alignment(HorizontalAlignment::Center)
+                            ->darkGray(),
+                    ),
+                );
+        }
+
         $verticalConstraints = [
             Constraint::length(2),
             Constraint::length($area->height - 4),
