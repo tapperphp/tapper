@@ -52,14 +52,16 @@ class Server
 
                 switch ($method) {
                     case 'log':
-                        $this->appState->appendLog(new LogItem(
+                        $kind = $params['kind'] ?? 'log';
+                        $isAppended = $this->appState->appendLog(new LogItem(
                             self::$id,
                             $params['microtime'],
-                            json_encode($params['message'], JSON_UNESCAPED_UNICODE),
+                            $kind === 'error' ? $params['message'] : json_encode($params['message'], JSON_UNESCAPED_UNICODE),
                             $params['caller'],
                             $params['trace'],
                             $params['rootDir'],
                             $params['code'],
+                            kind: $kind,
                         ));
 
                         $encoder->write([
@@ -68,11 +70,13 @@ class Server
                             'id' => $id,
                         ]);
 
-                        self::$id++;
+                        if ($isAppended) {
+                            self::$id++;
+                        }
                         break;
 
                     case 'wait':
-                        $this->appState->appendLog(new LogItem(
+                        $isAppended = $this->appState->appendLog(new LogItem(
                             self::$id,
                             $params['microtime'],
                             "⏸ {$params['message']} — press ENTER to continue",
@@ -83,7 +87,10 @@ class Server
                             kind: 'wait',
                         ));
 
-                        self::$id++;
+                        if ($isAppended) {
+                            self::$id++;
+                        }
+
                         $this->appState->pendingWaits++;
 
                         $this->eventBus->listen(KeyCode::Enter, function () use ($encoder, $id) {

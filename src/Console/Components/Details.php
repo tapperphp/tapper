@@ -9,6 +9,7 @@ use PhpTui\Term\KeyCode;
 use PhpTui\Term\KeyModifiers;
 use PhpTui\Term\MouseButton;
 use PhpTui\Term\MouseEventKind;
+use PhpTui\Tui\Color\RgbColor;
 use PhpTui\Tui\Display\Area;
 use PhpTui\Tui\Extension\Core\Widget\CompositeWidget;
 use PhpTui\Tui\Extension\Core\Widget\List\ListItem;
@@ -25,6 +26,7 @@ use Tapper\Console\CommandAttributes\KeyPressed;
 use Tapper\Console\CommandAttributes\Mouse;
 use Tapper\Console\Component;
 use Tapper\Console\MessageFormatter;
+use Tapper\Console\Palette;
 use Tapper\Console\Support\Scroll;
 
 class Details extends Component
@@ -137,9 +139,11 @@ class Details extends Component
         ];
         $infoListItems = array_map(fn ($line) => ListItem::new(Text::fromLine($line)), $info);
 
-        $formattedMessage = $log->kind === 'wait'
-            ? [Line::fromSpan(Span::styled($log->message, Style::default()->yellow()))]
-            : MessageFormatter::colorizeFormattedJson($log->message);
+        $formattedMessage = match ($log->kind) {
+            'wait' => [Line::fromSpan(Span::styled($log->message, Style::default()->yellow()))],
+            'error' => [Line::fromSpan(Span::styled($log->message, Style::default()->fg(RgbColor::fromHex(Palette::ERROR))))],
+            default => MessageFormatter::colorizeFormattedJson($log->message),
+        };
         $formattedListItems = array_map(fn ($line) => ListItem::new(Text::fromLine($line)), $formattedMessage);
 
         $allItems = [

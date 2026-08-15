@@ -46,8 +46,11 @@ Built by `Rpc\JsonRpcRequest::payload()`:
 | `trace` | array of `{file, line}` | backtrace, `DEBUG_BACKTRACE_IGNORE_ARGS`, first 2 frames skipped |
 | `rootDir` | string\|null | resolved via Composer's `ClassLoader` file location |
 | `code` | array of `{number, line, active}` | ±3 lines of source around the caller line |
+| `kind` | string\|null | `null`/absent for a normal value; `"error"` when `tp()` was called with a `Throwable` — in that case `message` is a preformatted string (not JSON-encoded) and `caller`/`trace`/`code` describe where the exception was thrown, not the `tp()` call site |
 
 Server response: `{"jsonrpc":"2.0","result":"ok","id":<id>}`.
+
+Consecutive `log`/`wait` calls with identical `kind`+`message`+`caller` are coalesced server-side (`AppState::appendLog()`) into one entry with an incrementing `LogItem::$repeatCount`, instead of appending a new row per call — this is what a UI-facing "×N" counter renders from.
 
 ### `wait` params
 
