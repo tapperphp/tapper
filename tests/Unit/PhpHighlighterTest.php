@@ -2,9 +2,10 @@
 
 declare(strict_types=1);
 
+use PhpTui\Tui\Text\Span;
 use Tapper\Console\PhpHighlighter;
 
-function spanFor(array $spans, string $content): ?PhpTui\Tui\Text\Span
+function spanFor(array $spans, string $content): ?Span
 {
     foreach ($spans as $span) {
         if ($span->content === $content) {
