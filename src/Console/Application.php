@@ -26,9 +26,9 @@ use Tapper\Server;
 
 class Application
 {
-    const float RESIZE_RATE = 1 / 4;
+    const RESIZE_RATE = 1 / 4;
 
-    const float RENDER_RATE = 1 / 60;
+    const RENDER_RATE = 1 / 60;
 
     private Component $window;
 
@@ -53,12 +53,13 @@ class Application
         private Server $server,
     ) {}
 
-    public function run(): int
+    public function run(?int $port = null): int
     {
         ErrorHandler::install($this->appState);
 
         $this->area = $this->phpTermBackend->size();
         $this->appState->version = 'v0.1.1';
+        $this->appState->port = $port;
         $this->terminal->execute(Actions::alternateScreenEnable());
         $this->terminal->execute(Actions::cursorHide());
         $this->terminal->execute(Actions::enableMouseCapture());
@@ -68,7 +69,7 @@ class Application
         $this->init();
         $this->startRendering();
         $this->startInputHandling();
-        $this->server->run();
+        $this->server->run($port);
 
         $this->loop->addSignal(SIGINT, function () {
             $this->close();

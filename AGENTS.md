@@ -43,7 +43,7 @@ src/
     Support/SpanTruncator.php    Clips/windows Span[] to a fixed width for fixed-width panes (Details, LogItem)
 docs/                         Deeper documentation — see docs/README.md
 examples/BasicExample.php     Runnable demo of the tp() API
-tests/Unit/                  ScrollTest.php, ScrollbarRenderTest.php, SpanTruncatorTest.php — only test suites that currently exist
+tests/Unit/                  Unit tests for pure/isolated logic (Scroll, SpanTruncator, AppState, EventBus, MessageFormatter, PhpHighlighter, Rpc/*, SocketPath, LogPath) — Console/Components, Server, and Application have no tests yet (need the ReactPHP loop/php-tui rendering)
 ```
 
 ## Running things

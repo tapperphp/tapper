@@ -44,11 +44,11 @@ class Details extends Component
     // 1 row top/bottom. Every width/height used to lay out content has to account for
     // that, since BlockRenderer only insets the *rendering*, not values computed here
     // beforehand (truncation budgets, paging math).
-    private const int BORDER_SIZE = 2;
+    private const BORDER_SIZE = 2;
 
-    private const int SCROLLBAR_GUTTER = 1;
+    private const SCROLLBAR_GUTTER = 1;
 
-    private const int H_STEP = 4;
+    private const H_STEP = 4;
 
     private int $count = 0;
 

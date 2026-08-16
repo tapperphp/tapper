@@ -7,13 +7,15 @@ namespace Tapper\Console\Components;
 use PhpTui\Term\KeyCode;
 use PhpTui\Term\KeyModifiers;
 use PhpTui\Term\MouseEventKind;
+use PhpTui\Tui\Color\AnsiColor;
 use PhpTui\Tui\Display\Area;
+use PhpTui\Tui\Extension\Core\Widget\Buffer\BufferContext;
+use PhpTui\Tui\Extension\Core\Widget\BufferWidget;
 use PhpTui\Tui\Extension\Core\Widget\CompositeWidget;
 use PhpTui\Tui\Extension\Core\Widget\GridWidget;
-use PhpTui\Tui\Extension\Core\Widget\Scrollbar\ScrollbarOrientation;
-use PhpTui\Tui\Extension\Core\Widget\Scrollbar\ScrollbarSymbols;
-use PhpTui\Tui\Extension\Core\Widget\ScrollbarWidget;
 use PhpTui\Tui\Layout\Constraint;
+use PhpTui\Tui\Position\Position;
+use PhpTui\Tui\Style\Style;
 use PhpTui\Tui\Widget\Direction;
 use PhpTui\Tui\Widget\Widget;
 use Tapper\Console\CommandAttributes\FirstRender;
@@ -219,6 +221,29 @@ class LogList extends Component
     {
         $this->fill();
 
+        $thumbBounds = Scroll::proportionalThumb($this->count, $this->visible, $this->appState->offset, $area->height);
+
+        // Built by hand rather than via php-tui's ScrollbarWidget/ScrollbarRenderer: that
+        // combo can only size the thumb off ScrollbarState's single contentLength field,
+        // which is wrong for a short list barely taller than the viewport (see the docblock
+        // on Scroll::proportionalThumb()). Details.php already draws its scrollbar the same
+        // way for the same reason.
+        $scrollbar = BufferWidget::new(function (BufferContext $context) use ($thumbBounds): void {
+            $trackArea = $context->area;
+            $x = max(0, $trackArea->right() - 1);
+            $neutralStyle = Style::default()->fg(AnsiColor::Reset)->bg(AnsiColor::Reset);
+
+            for ($y = $trackArea->top(); $y < $trackArea->bottom(); $y++) {
+                $isThumb = $thumbBounds !== null
+                    && ($y - $trackArea->top()) >= $thumbBounds[0]
+                    && ($y - $trackArea->top()) < $thumbBounds[1];
+
+                $context->buffer->get(Position::at($x, $y))
+                    ->setChar($isThumb ? '█' : ($thumbBounds === null ? ' ' : '│'))
+                    ->setStyle($neutralStyle);
+            }
+        });
+
         return CompositeWidget::fromWidgets(
             GridWidget::default()
                 ->direction(Direction::Vertical)
@@ -229,12 +254,7 @@ class LogList extends Component
                         $this->listItems
                     ),
                 ),
-            ScrollbarWidget::default()
-                ->state(Scroll::scrollbarState($this->count, $this->visible, $this->appState->offset))
-                ->orientation(ScrollbarOrientation::VerticalRight)
-                ->symbols(new ScrollbarSymbols('│', '█', '', ''))
-                ->endSymbol(null)
-                ->beginSymbol(null),
+            $scrollbar,
         );
     }
 }

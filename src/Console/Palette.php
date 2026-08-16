@@ -10,11 +10,11 @@ namespace Tapper\Console;
  */
 final class Palette
 {
-    public const string ACCENT = '7aa2f7';
+    public const ACCENT = '7aa2f7';
 
-    public const string TEXT_DEFAULT = 'c0caf5';
+    public const TEXT_DEFAULT = 'c0caf5';
 
-    public const string SELECTION_BG = '2a2e42';
+    public const SELECTION_BG = '2a2e42';
 
-    public const string ERROR = 'f7768e';
+    public const ERROR = 'f7768e';
 }

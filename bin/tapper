@@ -5,10 +5,13 @@ declare(strict_types=1);
 
 require __DIR__.'/../vendor/autoload.php';
 
+$options = getopt('', ['port::']);
+$port = isset($options['port']) ? (int) $options['port'] : null;
+
 $app = (require_once __DIR__.'/../src/Console/main.php');
 
 try {
-    $app->run();
+    $app->run($port);
 } catch (\Throwable $e) {
     $app->close();
     \Tapper\Console\ErrorHandler::logThrowable($e);

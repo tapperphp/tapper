@@ -11,21 +11,21 @@ use PhpTui\Tui\Text\Span;
 
 class MessageFormatter
 {
-    private const string STRING_COLOR = '9ece6a';
+    private const STRING_COLOR = '9ece6a';
 
-    private const string KEY_COLOR = '73daca';
+    private const KEY_COLOR = '73daca';
 
-    private const string NUMBER_COLOR = 'fd9d63';
+    private const NUMBER_COLOR = 'fd9d63';
 
-    private const string BOOL_COLOR = 'fd9d63';
+    private const BOOL_COLOR = 'fd9d63';
 
-    private const string NULL_COLOR = '2bc3de';
+    private const NULL_COLOR = '2bc3de';
 
-    private const string BRACKETS_COLOR = Palette::TEXT_DEFAULT;
+    private const BRACKETS_COLOR = Palette::TEXT_DEFAULT;
 
-    private const string PUNCTUATION_COLOR = '89ddff';
+    private const PUNCTUATION_COLOR = '89ddff';
 
-    private const string ERROR_COLOR = Palette::ERROR;
+    private const ERROR_COLOR = Palette::ERROR;
 
     public static function colorizeInlineJson(string $json): array
     {

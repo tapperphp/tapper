@@ -19,7 +19,7 @@ use Throwable;
  */
 final class ErrorHandler
 {
-    private const int NOTICE_SECONDS = 5;
+    private const NOTICE_SECONDS = 5;
 
     public static function install(AppState $appState): void
     {
