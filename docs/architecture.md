@@ -16,7 +16,7 @@ sequenceDiagram
     participant Sock as unix socket (tapper.sock)
     participant Server as Server.php (TUI process)
     participant State as AppState
-    participant Loop as ReactPHP loop
+    participant Reactor as ReactPHP loop
     participant TUI as php-tui Display
 
     App->>Tapper: tp($value)
@@ -25,12 +25,12 @@ sequenceDiagram
     Tapper->>Sock: write JSON-RPC-ish request, blocks on fgets()
     Sock->>Server: decoded NDJSON message
     Server->>State: appendLog(new LogItem(...))
-    State-->>Loop: onChange callback fires
+    State-->>Reactor: onChange callback fires
     Server-->>Sock: write {"result":"ok"}
     Sock-->>Tapper: response
     Tapper-->>App: unblocks, statement completes
-    Loop->>Loop: next 1/60s render tick sees shouldDraw=true
-    Loop->>TUI: Application::draw() -> Display::draw(widgets)
+    Reactor->>Reactor: next 1/60s render tick sees shouldDraw=true
+    Reactor->>TUI: Application::draw() -> Display::draw(widgets)
 ```
 
 ## Inside the TUI process
