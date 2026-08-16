@@ -20,9 +20,9 @@ use Tapper\Console\State\AppState;
 
 abstract class Component
 {
-    const string BEFORE_INIT = 'beforeInit';
+    const BEFORE_INIT = 'beforeInit';
 
-    const string AFTER_INIT = 'afterInit';
+    const AFTER_INIT = 'afterInit';
 
     protected array $components = [];
 

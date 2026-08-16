@@ -8,7 +8,7 @@ use RuntimeException;
 
 /**
  * @property string $version
- * @property int $port
+ * @property ?int $port
  * @property bool $live
  * @property bool $showDot
  * @property bool $typingMode
@@ -41,7 +41,7 @@ class AppState
      */
     public function __construct(
         private string $version = '',
-        private int $port = 2137,
+        private ?int $port = null,
         private bool $live = true,
         private bool $showDot = true,
         private bool $typingMode = false,

@@ -51,8 +51,9 @@ class Header extends Component
                         Span::fromString(' '),
                         Span::fromString($label),
                         $unread ? Span::fromString(sprintf(' (↓%s)', $this->appState->unread))->yellow() : Span::fromString(''),
-                        Span::fromString(' | '),
-                        Span::fromString(sprintf('port: %s', $this->appState->port)),
+                        $this->appState->port !== null
+                            ? Span::fromString(sprintf(' | port: %s', $this->appState->port))
+                            : Span::fromString(''),
                         $this->appState->filter !== '' && ! $this->appState->typingMode
                             ? Span::styled(sprintf(' | filter: %s', $this->appState->filter), Style::default()->fg(RgbColor::fromHex(Palette::ACCENT)))
                             : Span::fromString(''),

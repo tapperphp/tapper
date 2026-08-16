@@ -33,7 +33,8 @@ class Tapper
     public function __construct()
     {
         if (self::$client === null) {
-            self::$client = new JsonRpcClient;
+            $port = getenv('TAPPER_PORT');
+            self::$client = new JsonRpcClient(port: $port !== false && $port !== '' ? (int) $port : null);
         }
 
         $this->collectDebugInfo();

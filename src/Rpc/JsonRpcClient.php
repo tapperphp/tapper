@@ -10,7 +10,7 @@ class JsonRpcClient
 {
     public function __construct(
         protected string $host = '127.0.0.1',
-        protected int $port = 2137,
+        protected ?int $port = null,
         protected float $timeout = 0.5,
         protected float $pauseTimeout = 3600,
     ) {}
@@ -19,7 +19,11 @@ class JsonRpcClient
     {
         $payload = $jsonRpc->payload();
 
-        $socket = @stream_socket_client('unix://'.SocketPath::resolve(), $errno, $errstr, $this->timeout);
+        $target = $this->port !== null
+            ? "tcp://{$this->host}:{$this->port}"
+            : 'unix://'.SocketPath::resolve();
+
+        $socket = @stream_socket_client($target, $errno, $errstr, $this->timeout);
 
         if (! $socket) {
             return null;

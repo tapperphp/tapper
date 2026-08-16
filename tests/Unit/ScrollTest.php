@@ -187,32 +187,6 @@ describe('scroll jumping', function () {
     });
 });
 
-describe('scrollbar state', function () {
-    it('maps count/visible/offset onto content length, viewport length and position', function () {
-        $state = Scroll::scrollbarState(count: 100, visible: 20, offset: 35);
-
-        expect($state->contentLength)->toBe(80)
-            ->and($state->viewportContentLength)->toBe(20)
-            ->and($state->position)->toBe(35);
-    });
-
-    it('never lets content length go negative when everything fits on screen', function () {
-        $state = Scroll::scrollbarState(count: 5, visible: 20, offset: 0);
-
-        expect($state->contentLength)->toBe(0);
-    });
-
-    it('uses the max offset (count - visible) as content length so the thumb can reach the bottom', function () {
-        $count = 100;
-        $visible = 20;
-        $maxOffset = $count - $visible;
-
-        $state = Scroll::scrollbarState($count, $visible, $maxOffset);
-
-        expect($state->position)->toBe($state->contentLength);
-    });
-});
-
 describe('proportional thumb', function () {
     it('returns null when everything already fits on screen', function () {
         expect(Scroll::proportionalThumb(count: 5, visible: 20, offset: 0, trackHeight: 20))->toBeNull();

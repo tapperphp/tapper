@@ -25,9 +25,9 @@ use Tapper\Console\State\LogItem;
 
 class Main extends Component
 {
-    private const int MIN_WIDTH = 40;
+    private const MIN_WIDTH = 40;
 
-    private const int MIN_HEIGHT = 8;
+    private const MIN_HEIGHT = 8;
 
     protected array $components = [
         Header::class,

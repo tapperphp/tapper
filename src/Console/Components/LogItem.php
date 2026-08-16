@@ -25,9 +25,9 @@ use Tapper\Console\Support\SpanTruncator;
 
 class LogItem extends Component
 {
-    public const int HEIGHT = 2;
+    public const HEIGHT = 2;
 
-    private const int SCROLLBAR_GUTTER = 1;
+    private const SCROLLBAR_GUTTER = 1;
 
     private ?LogItemState $log = null;
 
@@ -48,14 +48,14 @@ class LogItem extends Component
         /** @var MouseEvent $event */
         $event = $data['event'];
 
-        if (! $this->log || $this->index === null) {
+        if (! $this->log || $this->index === null || $this->area === null) {
             return;
         }
 
         $elementPosInView = ($this->index - $this->appState->offset);
-        $itemPosition = ($elementPosInView * self::HEIGHT) + 1;
+        $itemPosition = $this->area->top() + ($elementPosInView * self::HEIGHT);
 
-        if ($event->row > $itemPosition
+        if ($event->row >= $itemPosition
             && $event->row < $itemPosition + self::HEIGHT
         ) {
             $this->click();

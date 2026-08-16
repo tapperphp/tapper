@@ -4,17 +4,11 @@ declare(strict_types=1);
 
 namespace Tapper\Console\Support;
 
-use PhpTui\Tui\Extension\Core\Widget\Scrollbar\ScrollbarState;
 use Tapper\Console\State\AppState;
 
 class Scroll
 {
     public function __construct(private readonly AppState $appState) {}
-
-    public static function scrollbarState(int $count, int $visible, int $offset): ScrollbarState
-    {
-        return new ScrollbarState(max(0, $count - $visible), $offset, $visible);
-    }
 
     /**
      * php-tui's ScrollbarState only has one `contentLength` field, which

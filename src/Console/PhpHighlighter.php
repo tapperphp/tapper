@@ -19,19 +19,19 @@ use PhpTui\Tui\Text\Span;
  */
 final class PhpHighlighter
 {
-    private const string KEYWORD_COLOR = 'bb9af7';
+    private const KEYWORD_COLOR = 'bb9af7';
 
-    private const string VARIABLE_COLOR = '7dcfff';
+    private const VARIABLE_COLOR = '7dcfff';
 
-    private const string STRING_COLOR = '9ece6a';
+    private const STRING_COLOR = '9ece6a';
 
-    private const string NUMBER_COLOR = 'ff9e64';
+    private const NUMBER_COLOR = 'ff9e64';
 
-    private const string COMMENT_COLOR = '565f89';
+    private const COMMENT_COLOR = '565f89';
 
-    private const string FUNCTION_COLOR = '7aa2f7';
+    private const FUNCTION_COLOR = '7aa2f7';
 
-    private const array KEYWORD_TOKENS = [
+    private const KEYWORD_TOKENS = [
         T_IF, T_ELSE, T_ELSEIF, T_ENDIF, T_FOR, T_FOREACH, T_ENDFOR, T_ENDFOREACH,
         T_WHILE, T_ENDWHILE, T_DO, T_SWITCH, T_ENDSWITCH, T_CASE, T_DEFAULT, T_BREAK,
         T_CONTINUE, T_FUNCTION, T_FN, T_RETURN, T_CLASS, T_INTERFACE, T_TRAIT, T_ENUM,
@@ -44,14 +44,14 @@ final class PhpHighlighter
         T_INSTEADOF,
     ];
 
-    private const array STRING_TOKENS = [
+    private const STRING_TOKENS = [
         T_CONSTANT_ENCAPSED_STRING, T_ENCAPSED_AND_WHITESPACE, T_START_HEREDOC,
         T_END_HEREDOC,
     ];
 
-    private const array COMMENT_TOKENS = [T_COMMENT, T_DOC_COMMENT];
+    private const COMMENT_TOKENS = [T_COMMENT, T_DOC_COMMENT];
 
-    private const array BARE_KEYWORDS = ['true', 'false', 'null', 'self', 'parent'];
+    private const BARE_KEYWORDS = ['true', 'false', 'null', 'self', 'parent'];
 
     /**
      * @return Span[]
